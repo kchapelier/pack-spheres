@@ -50,7 +50,7 @@ const sketch = ({ width, height }) => {
         0,
         Math.PI * 2
       );
-      context.fillStyle = "black";
+      context.fillStyle = "hsl(0,0%," + (Math.random() * 100).toFixed(0) + "%)";
       context.fill();
     });
   };

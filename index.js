@@ -41,32 +41,17 @@ function packSphere(opt = {}) {
 
     let radius = shape.minRadius;
 
-    if (shape.maxRadius > shape.minRadius) {
-      let count = 0;
-      while(radius < shape.maxRadius && count < shape.maxGrowthSteps) {
-        const newRadius = radius + shape.radiusGrowth;
-        if (outsideFn && outsideFn(shape.position, newRadius, shape.padding)) {
-          break;
-        }
-        radius = newRadius;
-        count++;
+    let count = 0;
+    while(radius < shape.maxRadius && count < shape.maxGrowthSteps) {
+      const newRadius = radius + shape.radiusGrowth;
+      if (outsideFn && outsideFn(shape.position, newRadius, shape.padding)) {
+        break;
       }
-
-      for (let i = 0; i < shapes.length; i++) {
-        const other = shapes[i];
-    
-        let distance = 0;
-        for (let n = 0; n < shape.position.length; n++) {
-          const delta = shape.position[n] - other.position[n];
-          distance += delta * delta;
-        }
-
-        distance = Math.sqrt(distance);
-        radius = Math.min(radius, distance - (shape.padding + other.radius + other.padding));
-      }
+      radius = newRadius;
+      count++;
     }
 
-    shape.radius = radius;
+    shape.radius = Math.min(radius, shape.maxRadius);
     return shape;
   }
 
@@ -80,63 +65,40 @@ function packSphere(opt = {}) {
     const radiusGrowth = expand(opt.radiusGrowth, 0.01);
     const maxGrowthSteps = expand(opt.maxGrowthSteps, Infinity);
     const position = sampleFn();
-    const radius = expand(opt.minRadius, 0.01);
+    const minRadius = expand(opt.minRadius, 0.01);
     const padding = expand(opt.padding, 0);
-    const maxRadius = Math.min(
-      expand(opt.maxRadius, 0.5),
-      radius + radiusGrowth * maxGrowthSteps
-    );
+    let maxRadius = expand(opt.maxRadius, 0.5);
 
-    if (reject(position, radius, padding)) {
+    if (outsideFn && outsideFn(position, minRadius, padding)) {
       return false;
     }
 
+    for (let i = 0; i < shapes.length; i++) {
+      const other = shapes[i];
+
+      let distance = 0;
+      for (let n = 0; n < position.length; n++) {
+        const delta = position[n] - other.position[n];
+        distance += delta * delta;
+      }
+
+      distance = Math.sqrt(distance);
+      maxRadius = Math.min(maxRadius, distance - (padding + other.radius + other.padding));
+
+      if (maxRadius < minRadius) {
+        return false;
+      }
+    }
+
+
     return {
       maxGrowthSteps,
-      minRadius: radius,
+      minRadius,
       maxRadius,
       radiusGrowth,
       position,
       padding
     };
-  }
-
-  function reject(position, radius, padding) {
-    if (outsideFn && outsideFn(position, radius, padding)) {
-      return true;
-    }
-
-    /*/
-    let result = false;
-    for (let i = 0; !result && i < shapes.length; i++) {
-      const other = shapes[i];
-      const maxDist = radius + padding + other.radius + other.padding;
-      const maxDistSq = maxDist * maxDist;
-  
-      let distanceSq = 0;
-      for (let n = 0; n < position.length; n++) {
-        const delta = position[n] - other.position[n];
-        distanceSq += delta * delta;
-      }
-  
-      result = distanceSq < maxDistSq;
-    }
-
-    return result;
-    /*/
-    return shapes.some(other => {
-      const maxDist = radius + padding + other.radius + other.padding;
-      const maxDistSq = maxDist * maxDist;
-  
-      let distanceSq = 0;
-      for (let n = 0; n < position.length; n++) {
-        const delta = position[n] - other.position[n];
-        distanceSq += delta * delta;
-      }
-  
-      return distanceSq < maxDistSq;
-    });
-    /**/
   }
 
   function outside(position, radius, padding) {
