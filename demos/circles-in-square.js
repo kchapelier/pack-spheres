@@ -1,12 +1,14 @@
 const canvasSketch = require("canvas-sketch");
 const pack = require("..");
+
+/*
 console.log('---')
 for (let i = 0; i < 3; i++) {
   console.profile('Test ' + i);
   const start = Date.now();
   const shapes = pack({
       bounds: 1,
-      maxCount: 2500,
+      maxCount: 250,
       dimensions: 2,
       minRadius: 0.02,
       maxRadius: 0.2,
@@ -16,6 +18,7 @@ for (let i = 0; i < 3; i++) {
   console.log(shapes.length, (Date.now() - start) / 1000);
   console.profileEnd('Test ' + i);
 }
+*/
 
 const settings = {
   dimensions: [1024, 1024]
@@ -26,10 +29,15 @@ const sketch = ({ width, height }) => {
   const margin = width * 0.1;
   const scale = 0.5 * size - margin;
 
+  console.time('pack');
   const shapes = pack({
     dimensions: 2,
+    maxCount: 750,
+    packAttempts: 350,
     padding: 0.0025
   });
+  console.timeEnd('pack');
+  console.log(shapes);
 
   return ({ context, width, height }) => {
     // Clear background
@@ -50,7 +58,7 @@ const sketch = ({ width, height }) => {
         0,
         Math.PI * 2
       );
-      context.fillStyle = "hsl(0,0%," + (Math.random() * 100).toFixed(0) + "%)";
+      context.fillStyle = "hsl(0,0%," + (Math.random() * 0).toFixed(0) + "%)";
       context.fill();
     });
   };
