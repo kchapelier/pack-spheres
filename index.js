@@ -40,19 +40,33 @@ function packSphere(opt = {}) {
     if (!shape) return false;
 
     let radius = shape.minRadius;
-    if (shape.radiusGrowth > 0) {
+
+    if (shape.maxRadius > shape.minRadius) {
       let count = 0;
-      while (radius < shape.maxRadius && count < shape.maxGrowthSteps) {
+      while(radius < shape.maxRadius && count < shape.maxGrowthSteps) {
         const newRadius = radius + shape.radiusGrowth;
-        if (reject(shape.position, newRadius, shape.padding)) {
+        if (outsideFn && outsideFn(shape.position, newRadius, shape.padding)) {
           break;
         }
         radius = newRadius;
         count++;
       }
+
+      for (let i = 0; i < shapes.length; i++) {
+        const other = shapes[i];
+    
+        let distance = 0;
+        for (let n = 0; n < shape.position.length; n++) {
+          const delta = shape.position[n] - other.position[n];
+          distance += delta * delta;
+        }
+
+        distance = Math.sqrt(distance);
+        radius = Math.min(radius, distance - (shape.padding + other.radius + other.padding));
+      }
     }
 
-    shape.radius = Math.min(shape.maxRadius, radius);
+    shape.radius = radius;
     return shape;
   }
 
@@ -63,12 +77,15 @@ function packSphere(opt = {}) {
   }
 
   function place() {
-    const maxRadius = expand(opt.maxRadius, 0.5);
     const radiusGrowth = expand(opt.radiusGrowth, 0.01);
     const maxGrowthSteps = expand(opt.maxGrowthSteps, Infinity);
     const position = sampleFn();
     const radius = expand(opt.minRadius, 0.01);
     const padding = expand(opt.padding, 0);
+    const maxRadius = Math.min(
+      expand(opt.maxRadius, 0.5),
+      radius + radiusGrowth * maxGrowthSteps
+    );
 
     if (reject(position, radius, padding)) {
       return false;
@@ -88,14 +105,38 @@ function packSphere(opt = {}) {
     if (outsideFn && outsideFn(position, radius, padding)) {
       return true;
     }
+
+    /*/
+    let result = false;
+    for (let i = 0; !result && i < shapes.length; i++) {
+      const other = shapes[i];
+      const maxDist = radius + padding + other.radius + other.padding;
+      const maxDistSq = maxDist * maxDist;
+  
+      let distanceSq = 0;
+      for (let n = 0; n < position.length; n++) {
+        const delta = position[n] - other.position[n];
+        distanceSq += delta * delta;
+      }
+  
+      result = distanceSq < maxDistSq;
+    }
+
+    return result;
+    /*/
     return shapes.some(other => {
-      return collision(
-        position,
-        radius + padding,
-        other.position,
-        other.radius + other.padding
-      );
+      const maxDist = radius + padding + other.radius + other.padding;
+      const maxDistSq = maxDist * maxDist;
+  
+      let distanceSq = 0;
+      for (let n = 0; n < position.length; n++) {
+        const delta = position[n] - other.position[n];
+        distanceSq += delta * delta;
+      }
+  
+      return distanceSq < maxDistSq;
     });
+    /**/
   }
 
   function outside(position, radius, padding) {
@@ -119,29 +160,5 @@ function packSphere(opt = {}) {
       p.push((random() * 2 - 1) * bounds);
     }
     return p;
-  }
-
-  function distanceSq(a, b) {
-    let sum = 0;
-    for (let n = 0; n < a.length; n++) {
-      const delta = a[n] - b[n];
-      sum += delta * delta;
-    }
-    return sum;
-  }
-
-  function magnitude(a) {
-    let sum = 0;
-    for (let n = 0; n < a.length; n++) {
-      const d = a[n];
-      sum += d * d;
-    }
-    return Math.sqrt(sum);
-  }
-
-  function collision(pointA, radiusA, pointB, radiusB) {
-    const radius = radiusA + radiusB;
-    const radiusSq = radius * radius;
-    return distanceSq(pointA, pointB) < radiusSq;
   }
 }
