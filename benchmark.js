@@ -28,7 +28,7 @@ for (var i = 0; i < iterations; i++) {
         maxCount: 2500,
         dimensions: 2,
         minRadius: 0.01,
-        maxRadius: 0.25,
+        maxRadius: 0.5,
         padding: 0.0025
     }));
 

@@ -21,7 +21,7 @@ for (let i = 0; i < 3; i++) {
 */
 
 const settings = {
-  dimensions: [1024, 1024]
+  dimensions: [2048, 2048]
 };
 
 const sketch = ({ width, height }) => {
@@ -32,9 +32,11 @@ const sketch = ({ width, height }) => {
   console.time('pack');
   const shapes = pack({
     dimensions: 2,
-    maxCount: 750,
-    packAttempts: 350,
-    padding: 0.0025
+    maxCount: 13500,
+    packAttempts: 1000,
+    padding: 0.0,
+    minRadius: 0.0050,
+    maxRadius: 0.0100
   });
   console.timeEnd('pack');
   console.log(shapes);
@@ -58,7 +60,7 @@ const sketch = ({ width, height }) => {
         0,
         Math.PI * 2
       );
-      context.fillStyle = "hsl(0,0%," + (Math.random() * 0).toFixed(0) + "%)";
+      context.fillStyle = "hsl(0,0%," + (10 + 60 * Math.random()).toFixed(0) + "%)";
       context.fill();
     });
   };
